@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 Exists for the sole purpose of helping people who want additional audio setup commands get those commands.
 '''
