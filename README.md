@@ -1,6 +1,15 @@
 # Python-Pulseaudio-Loopback-Tool
 A tool written in python using tkinter to allow a user to create basic loopbacks and virtual sinks without digging into the command line too much
 
+![alt text](https://i.imgur.com/rNNXO7D.png "Screenshot")
+
+## Quick Feature List
+* Create named Null Sinks
+* Create Loopbacks with a specific Sink and Source
+* Unload Loopbacks and Null Sinks
+* All via a GUI!
+
+
 ## Longer Description
 This tool was created to be an easy way to create and destroy basic loopbacks and virtual null sinks using a GUI, rather than having to find and enter the commands in the command line. The Python Pulseaudio Loopback Tool currently allows the user to easily create custom named null sinks, loopbacks with a custom source and sink, and remove null sink and loopback modules. Again, all via a GUI.
 
