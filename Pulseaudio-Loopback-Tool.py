@@ -438,7 +438,7 @@ def create_loopback():
     entry_sink = entry_create_loopback_sink.get()
     entry_source = entry_create_loopback_source.get()
     print("Attempting to create loopback from", entry_source, "to", entry_sink, end=" - ")
-    returned_value = sp.call("pactl load-module module-loopback source=" + entry_source + " sink=" + entry_sink +
+    returned_value = sp.call("pactl load-module module-loopback sink=" + entry_sink + " source=" + entry_source +
                              " latency_msec=5", shell=True, stdout=sp.PIPE)
     if returned_value is 1:
         entry_create_loopback_source.delete(0, tk.END)
