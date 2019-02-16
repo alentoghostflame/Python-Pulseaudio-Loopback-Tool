@@ -305,6 +305,24 @@ def process_module_list(input_list):
                 temp = item[0] + "   " + item[1]
                 devices.append(temp)
             pass
+        elif len(item) > 1 and item[1] == "module-remap-source":
+            # If there is a module ID, module type, and module attributes,
+            # ex "58    module-remap-source    source_name=Test":
+            if len(item) > 2:
+                temp = item[0] + "   " + item[1]
+                attribute_list = item[2].split(" ")
+                for attribute in attribute_list:
+                    if attribute[:11] == "source_name":
+                        temp += "   " + attribute
+                    elif attribute[:6] == "master":
+                        temp += "   " + attribute
+                    else:
+                        pass
+                devices.append(temp)
+            else:
+                # If there is only the module ID and type, ex "58    module-remap-source:
+                temp = item[0] + "   " + item[1]
+                devices.append(temp)
         else:
             # If its not a module-null-sink or module-loopback, this program doesnt care about it.
             pass
