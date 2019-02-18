@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 '''
-Exists for the sole purpose of helping people who want additional audio setup commands get those commands.
+Simple(ish) program to allow a user to quickly make basic virtual sinks and loopbacks in Pulseaudio
+using a GUI and not having to interact with the command line.
+Uses shell commands to interact with Pulseaudio.
+Developed and tested on Ubuntu 18.10, everything else is untested.
+The GUI is created via tkinter.
 '''
 
 import subprocess as sp
@@ -12,6 +16,16 @@ def main():
 
 
 def setup_window():
+    '''
+    Spawns the window and all the widgets inside, sets some defaults, then goes into the tkinter mainloop for
+    the window.
+    The placement of all code for creating and placing widgets below should correspond to the actual GUI for
+    readability. The top-left most widget should be at the top of this function, and the bottom-right most widget
+    should be at the bottom.
+    Each collection of widgets should also have a triple quoted tag above them denoting what purpose that collection
+    has. For example, a button and 2 entries that all function together to create a loopback should be titled something
+    like "Loopback Creation"
+    '''
     # Main window that everything hooks to.
     window = tk.Tk()
     window.title("Pulseaudio Bridging Utility")
@@ -195,6 +209,12 @@ def list_modules():
 
 
 def process_list(inputlist):
+    '''
+    Takes an input list and processes it to make it easier to work with later on. Used with the list_*() functions.
+    :param inputlist: A string that consists of at least 1 line and 1 tab, typically from the list_*() functions.
+    :return: A 2D list, with each sentence being the first dimension and each part of the sentence separated by tabs
+    being the second dimension.
+    '''
     splitlinelist = inputlist.splitlines()
     output = []
     for line in splitlinelist:
@@ -207,14 +227,22 @@ def process_list(inputlist):
 
 
 def color_tag(state):
+    '''
+    Used to convert a state to a color then output that color for the devices
+    in listbox_sink_list and listbox_source_list.
+    :param state: A string.
+    :return: A color for use by tkinter.
+    '''
+    # output = "default"
     if state == "RUNNING":
-        return "green"
+        output = "green"
     elif state == "IDLE":
-        return "green"
+        output = "green"
     elif state == "SUSPENDED":
-        return "yellow"
+        output = "yellow"
     else:
-        return "red"
+        output = "red"
+    return output
 
 
 def process_short_list(input_list):
@@ -241,6 +269,8 @@ def process_module_list(input_list):
     This function is passed a string input from "pactl list modules short" and organizes it as needed.
     :param input_list: A string with at least 1 line, and at least 2 different items separated by tabs.
     :return: A list of shortened names of applicable modules.
+    TODO: Actually clean all this up and make a nice function that accepts any amount of arguments to
+    TODO: process attributes.
     '''
     processed_list = process_list(input_list)
     devices = []
@@ -371,10 +401,19 @@ def refresh_lists():
 
 
 def open_pavucontrol():
+    '''
+    Uses subprocess to open the PulseAudio Volume Control application.
+    :return: No return value.
+    '''
     returned_value = sp.Popen("pavucontrol", shell=True, stdout=sp.PIPE)
 
 
 def on_select_sink_list(evt):
+    '''
+    Perform actions when an item in listbox_sink_list is selected.
+    :param evt: Not used, listbox_*.bind() forces an event variable into the function.
+    :return: No return value.
+    '''
     global listbox_sink_list
     global entry_create_loopback_sink
     if len(listbox_sink_list.curselection()) > 0:
@@ -389,6 +428,11 @@ def on_select_sink_list(evt):
 
 
 def on_select_source_list(evt):
+    '''
+    Perform actions when an item in listbox_source_list is selected.
+    :param evt: Not used, listbox_*.bind() forces an event variable into the function.
+    :return: No return value.
+    '''
     global listbox_source_list
     global entry_create_loopback_source
     if len(listbox_source_list.curselection()) > 0:
@@ -403,6 +447,11 @@ def on_select_source_list(evt):
 
 
 def on_select_module_list(evt):
+    '''
+    Perform actions when an item in listbox_module_list is selected.
+    :param evt: Not used, listbox_*.bind() forces an event variable into the function.
+    :return: No return value.
+    '''
     global listbox_module_list
     global entry_remove_module
     if len(listbox_module_list.curselection()) > 0:
@@ -417,6 +466,14 @@ def on_select_module_list(evt):
 
 
 def create_virtual_sink():
+    '''
+    When button_create_sink is pressed by the user, create a virtual sink with the name and device description of the
+    text inside entry_create_sink.
+    If successful, log in terminal.
+    If unsuccessful, print "Invalid Name!" inside entry_create_sink and log in terminal.
+    Then refresh the lists.
+    :return: No return value.
+    '''
     global entry_create_sink
     inputname = entry_create_sink.get()
     command = ("pactl load-module module-null-sink sink_name=" + inputname +
@@ -434,23 +491,16 @@ def create_virtual_sink():
     refresh_lists()
 
 
-def remove_module():
-    global entry_remove_module
-    entry = entry_remove_module.get()
-    print("Attempting to remove module", entry, end=" - ")
-    returned_value = sp.call("pactl unload-module " + entry, shell=True, stdout=sp.PIPE)
-    if returned_value is 1:
-        entry_remove_module.delete(0, tk.END)
-        entry_remove_module.insert(0, "ERR")
-        print("Removal of module", entry, "was not successful.")
-    elif returned_value is 0:
-        print("Removal of module", entry, "successful.")
-    else:
-        print("Something happened in remove_module() and I don't know what!")
-    refresh_lists()
-
-
 def create_loopback():
+    '''
+    When button_create_loopback is pressed by the user, create a loopback with the target sink specified
+    by entry_create_loopback_sink and target source specified by entry_create_loopback_source.
+    If successful, log in terminal.
+    if unsuccessful, print "ERR" in both entry_create_loopback_sink and entry_create_loopback_source and
+    log in terminal.
+    Then refresh the lists.
+    :return: No return value.
+    '''
     global entry_create_loopback_sink
     global entry_create_loopback_source
     entry_sink = entry_create_loopback_sink.get()
@@ -468,6 +518,29 @@ def create_loopback():
         print("Creation of loopback from", entry_source, "to", entry_sink, "was successful")
     else:
         print("Something happened in create_loopback() and I don't know what!")
+    refresh_lists()
+
+
+def remove_module():
+    '''
+    When button_remove_module is pressed by the user, remove the module specified by entry_remove_module.
+    If successful, log in terminal.
+    if unsuccessful, print "ERR" in entry_remove_module and log in terminal.
+    Then refresh the lists.
+    :return: No return value.
+    '''
+    global entry_remove_module
+    entry = entry_remove_module.get()
+    print("Attempting to remove module", entry, end=" - ")
+    returned_value = sp.call("pactl unload-module " + entry, shell=True, stdout=sp.PIPE)
+    if returned_value is 1:
+        entry_remove_module.delete(0, tk.END)
+        entry_remove_module.insert(0, "ERR")
+        print("Removal of module", entry, "was not successful.")
+    elif returned_value is 0:
+        print("Removal of module", entry, "successful.")
+    else:
+        print("Something happened in remove_module() and I don't know what!")
     refresh_lists()
 
 
