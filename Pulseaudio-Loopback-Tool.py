@@ -264,6 +264,41 @@ def process_short_list(input_list):
     return output
 
 
+def process_attribute(input_list, args):
+    '''
+    This function takes a line of different attributes separated with spaces, and outputs the ones specified in args
+    in the order given.
+    :param input_list: A string containing a list of attributes separated with spaces.
+    :param args: String(s) containing the name of the attribute you are looking for. Multiple strings can be given.
+    :return: A list of strings containing the attribute and its value.
+    '''
+    output = []
+    attribute_list = input_list.split(" ")
+    for attribute in attribute_list:
+        for argument in args:
+            if attribute[:len(argument)] == argument:
+                output.append(attribute)
+
+    return output
+
+
+def process_module(input_module, *args):
+    '''
+    This function takes a list of strings that correspond to a single line from "pactl list modules short" and what
+    attributes you want listed and returns a proper string name for displaying.
+    :param input_module: List of strings containing information about the module in the following order:
+    id, module name, (optional) attributes.
+    :param args: String(s) containing the name of the attribute you are looking for. Multiple strings can be given.
+    :return: Formatted string for displaying in a listbox.
+    '''
+    output = input_module[0] + "   " + input_module[1]
+    if len(input_module) > 2:
+        attribute_list = process_attribute(input_module[2], args)
+        for attribute in attribute_list:
+            output += "   " + attribute
+    return output
+
+
 def process_module_list(input_list):
     '''
     This function is passed a string input from "pactl list modules short" and organizes it as needed.
@@ -277,84 +312,22 @@ def process_module_list(input_list):
     for item in processed_list:
         # If the item is some sort of null sink (because it could be made via this program):
         if len(item) > 1 and item[1] == "module-null-sink":
-            # If there is a module ID, module type, and module attributes,
-            # ex "55    module-null-sink    sink_name=Default_Sink_Name rate=48000":
-            if len(item) > 2:
-                temp = item[0] + "   " + item[1]
-                attribute_list = item[2].split(" ")
-                for attribute in attribute_list:
-                    if attribute[:9] == "sink_name":
-                        temp += "   " + attribute
-                    else:
-                        pass
-                devices.append(temp)
-                pass
-            else:
-                # If there is only the module ID and type, ex "55    module-null-sink":
-                temp = item[0] + "   " + item[1]
-                devices.append(temp)
+            temp = process_module(item, "sink_name")
+            devices.append(temp)
         # If the item is some sort of loopback (because it could be made via this program):
         elif len(item) > 1 and item[1] == "module-loopback":
-            # If there is a module ID, module type, and module attributes,
-            # ex "56    module-loopback    sink=Default_Sink_Name source=Default_Sink_Name.monitor":
-            if len(item) > 2:
-                temp = item[0] + "   " + item[1]
-                attribute_list = item[2].split(" ")
-                for attribute in attribute_list:
-                    if attribute[:4] == "sink":
-                        temp += "   " + attribute
-                    elif attribute[:6] == "source":
-                        temp += "   " + attribute
-                    else:
-                        pass
-                devices.append(temp)
-                pass
-            elif len(item) > 1:
-                # If there is only a module ID and module type, ex "56    module-loopback":
-                temp = item[0] + "   " + item[1]
-                devices.append(temp)
-            else:
-                # Nothing should ever hit this pass, but keep it for future.
-                pass
-            pass
-        # IF the item is some sort of null source (because it could be made via this program):
+            temp = process_module(item, "sink", "source")
+            devices.append(temp)
+        # If the item is some sort of null source (because it could be made via this program):
         elif len(item) > 1 and item[1] == "module-null-source":
-            # If there is a module ID, module type, and module attributes,
-            # ex "57    module-null-source    source_name=Test":
-            if len(item) > 2:
-                temp = item[0] + "   " + item[1]
-                attribute_list = item[2].split(" ")
-                for attribute in attribute_list:
-                    if attribute[:11] == "source_name":
-                        temp += "   " + attribute
-                    else:
-                        pass
-                devices.append(temp)
-            else:
-                # If there is only the module ID and type, ex "57    module-null-source:
-                temp = item[0] + "   " + item[1]
-                devices.append(temp)
-            pass
+            temp = process_module(item, "source_name")
+            devices.append(temp)
+        # If the item is some sort of remapped source (because it could be made via this program):
         elif len(item) > 1 and item[1] == "module-remap-source":
-            # If there is a module ID, module type, and module attributes,
-            # ex "58    module-remap-source    source_name=Test":
-            if len(item) > 2:
-                temp = item[0] + "   " + item[1]
-                attribute_list = item[2].split(" ")
-                for attribute in attribute_list:
-                    if attribute[:11] == "source_name":
-                        temp += "   " + attribute
-                    elif attribute[:6] == "master":
-                        temp += "   " + attribute
-                    else:
-                        pass
-                devices.append(temp)
-            else:
-                # If there is only the module ID and type, ex "58    module-remap-source:
-                temp = item[0] + "   " + item[1]
-                devices.append(temp)
+            temp = process_module(item, "source_name", "master")
+            devices.append(temp)
         else:
-            # If its not a module-null-sink or module-loopback, this program doesnt care about it.
+            # If its not any of the modules listed above, this program doesnt care about it.
             pass
     return devices
 
