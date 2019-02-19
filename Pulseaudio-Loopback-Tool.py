@@ -308,20 +308,22 @@ def process_module_list(input_list):
     processed_list = process_list(input_list)
     devices = []
     for item in processed_list:
+        if len(item) < 2:
+            print("There isn't supposed to be a module with only an ID...")
         # If the item is some sort of null sink (because it could be made via this program):
-        if len(item) > 1 and item[1] == "module-null-sink":
+        elif item[1] == "module-null-sink":
             temp = process_module(item, "sink_name")
             devices.append(temp)
         # If the item is some sort of loopback (because it could be made via this program):
-        elif len(item) > 1 and item[1] == "module-loopback":
+        elif item[1] == "module-loopback":
             temp = process_module(item, "sink", "source")
             devices.append(temp)
         # If the item is some sort of null source (because it could be made via this program):
-        elif len(item) > 1 and item[1] == "module-null-source":
+        elif item[1] == "module-null-source":
             temp = process_module(item, "source_name")
             devices.append(temp)
         # If the item is some sort of remapped source (because it could be made via this program):
-        elif len(item) > 1 and item[1] == "module-remap-source":
+        elif item[1] == "module-remap-source":
             temp = process_module(item, "source_name", "master")
             devices.append(temp)
         else:
