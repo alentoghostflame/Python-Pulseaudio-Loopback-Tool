@@ -304,8 +304,6 @@ def process_module_list(input_list):
     This function is passed a string input from "pactl list modules short" and organizes it as needed.
     :param input_list: A string with at least 1 line, and at least 2 different items separated by tabs.
     :return: A list of shortened names of applicable modules.
-    TODO: Actually clean all this up and make a nice function that accepts any amount of arguments to
-    TODO: process attributes.
     '''
     processed_list = process_list(input_list)
     devices = []
