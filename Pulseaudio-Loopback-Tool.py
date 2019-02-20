@@ -9,6 +9,7 @@ The GUI is created via tkinter.
 
 import subprocess as sp
 import tkinter as tk
+from Logger import log, INFO, WARNING, ERROR
 
 
 def main():
@@ -309,7 +310,7 @@ def process_module_list(input_list):
     devices = []
     for item in processed_list:
         if len(item) < 2:
-            print("There isn't supposed to be a module with only an ID...")
+            log(WARNING, "process_module_list", "Module with less than 2 items found: \"" + str(item) + "\"")
         # If the item is some sort of null sink (because it could be made via this program):
         elif item[1] == "module-null-sink":
             temp = process_module(item, "sink_name")
@@ -341,6 +342,7 @@ def refresh_lists():
     and sources have entries colored based on what state they are in. For color information, see color_tag().
     :return: No return value.
     '''
+    log(INFO, "refresh_lists", "Starting refresh of lists.")
     global listbox_sink_list
     global listbox_source_list
     global listbox_module_list
@@ -371,6 +373,7 @@ def refresh_lists():
     listbox_module_list.delete(0, tk.END)
     for module in modules:
         listbox_module_list.insert(tk.END, module)
+    log(INFO, "refresh_lists", "Finished refresh of lists.")
 
 
 def open_pavucontrol():
@@ -378,6 +381,7 @@ def open_pavucontrol():
     Uses subprocess to open the PulseAudio Volume Control application.
     :return: No return value.
     '''
+    log(INFO, "open_pavucontrol", "Opening pavucontrol")
     returned_value = sp.Popen("pavucontrol", shell=True, stdout=sp.PIPE)
 
 
@@ -448,19 +452,20 @@ def create_virtual_sink():
     :return: No return value.
     '''
     global entry_create_sink
-    inputname = entry_create_sink.get()
-    command = ("pactl load-module module-null-sink sink_name=" + inputname +
-               " sink_properties=device.description=" + inputname + " rate=48000")
-    print("Attempting to create virtual sink with name", inputname, end=" - ")
+    input_name = entry_create_sink.get()
+    command = ("pactl load-module module-null-sink sink_name=" + input_name +
+               " sink_properties=device.description=" + input_name + " rate=48000")
+    log(INFO, "create_virtual_sink", "Attempting to create virtual sink with name \"" + input_name + "\"")
     returned_value = sp.call(command, shell=True, stdout=sp.PIPE)
     if returned_value is 1:
         entry_create_sink.delete(0, tk.END)
         entry_create_sink.insert(0, "Invalid Name!")
-        print("Creation of virtual sink with name", inputname, "was not successful.")
+        log(WARNING, "create_virtual_sink", "Creation of virtual sink with name \"" + input_name +
+            "\" was not successful.")
     elif returned_value is 0:
-        print("Creation of virtual sink with name", inputname, "was successful.")
+        log(INFO, "create_virtual_sink", "Creation of virtual sink with name \"" + input_name + "\" was successful.")
     else:
-        print("Something happened in create_virtual_sink() and I don't know what!")
+        log(ERROR, "create_virtual_sink", "Unexpected Error Value:", returned_value)
     refresh_lists()
 
 
@@ -478,7 +483,8 @@ def create_loopback():
     global entry_create_loopback_source
     entry_sink = entry_create_loopback_sink.get()
     entry_source = entry_create_loopback_source.get()
-    print("Attempting to create loopback from", entry_source, "to", entry_sink, end=" - ")
+    log(INFO, "create_loopback", "Attempting to create loopback from \"" + entry_source + "\" to \"" +
+        entry_sink + "\"")
     returned_value = sp.call("pactl load-module module-loopback sink=" + entry_sink + " source=" + entry_source +
                              " latency_msec=5", shell=True, stdout=sp.PIPE)
     if returned_value is 1:
@@ -486,11 +492,13 @@ def create_loopback():
         entry_create_loopback_source.insert(0, "ERR")
         entry_create_loopback_sink.delete(0, tk.END)
         entry_create_loopback_sink.insert(0, "ERR")
-        print("Creation of loopback from", entry_source, "to", entry_sink, "was not successful")
+        log(WARNING, "create_loopback", "Creation of loopback from \"" + entry_source + "\" to \"" + entry_sink +
+            "\" was not successful.")
     elif returned_value is 0:
-        print("Creation of loopback from", entry_source, "to", entry_sink, "was successful")
+        log(INFO, "create_loopback", "Creation of loopback from \"" + entry_source + "\" to \"" + entry_sink +
+            "\" was successful.")
     else:
-        print("Something happened in create_loopback() and I don't know what!")
+        log(ERROR, "create_loopback", "Unexpected Error Value:", returned_value)
     refresh_lists()
 
 
@@ -504,16 +512,16 @@ def remove_module():
     '''
     global entry_remove_module
     entry = entry_remove_module.get()
-    print("Attempting to remove module", entry, end=" - ")
+    log(INFO, "remove_module", "Attempting to remove module \"" + entry + "\"")
     returned_value = sp.call("pactl unload-module " + entry, shell=True, stdout=sp.PIPE)
     if returned_value is 1:
         entry_remove_module.delete(0, tk.END)
         entry_remove_module.insert(0, "ERR")
-        print("Removal of module", entry, "was not successful.")
+        log(WARNING, "remove_module", "Removal of module \"" + entry + "\" was not successful.")
     elif returned_value is 0:
-        print("Removal of module", entry, "successful.")
+        log(INFO, "remove_module", "Removal of module \"" + entry + "\" was successful.")
     else:
-        print("Something happened in remove_module() and I don't know what!")
+        log(ERROR, "remove_module", "Unexpected Error Value:", returned_value)
     refresh_lists()
 
 
