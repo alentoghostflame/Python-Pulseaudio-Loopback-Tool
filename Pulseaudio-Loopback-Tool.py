@@ -46,7 +46,7 @@ def setup_window():
 
     ''' Virtual Sink Creation '''
     # Setting up frame for widgets that create virtual sinks
-    labelframe_create_sink = tk.LabelFrame(window, text="Sink Creation", padx=5, pady=5)
+    labelframe_create_sink = tk.LabelFrame(window, text="Virtual Sink Creation", padx=5, pady=5)
     labelframe_create_sink.grid(row=1, column=0, padx=5)
 
     # Setting up user entry for name of virtual sink
@@ -88,6 +88,34 @@ def setup_window():
     scrollbar_sink_list_horz.grid(row=1, column=0, sticky=tk.S + tk.E + tk.W)
     listbox_sink_list.config(xscrollcommand=scrollbar_sink_list_horz.set)
 
+    ''' Create Remapped Source '''
+    # Setting up frame for widgets that remap sources to another name
+    labelframe_remap_source = tk.LabelFrame(window, text="Remapped Source Creation", padx=5, pady=5)
+    labelframe_remap_source.grid(row=2, column=0, padx=5, pady=5)
+
+    # Label for source ID.
+    label_remap_source_source = tk.Label(labelframe_remap_source, text="Source", width=6)
+    label_remap_source_source.grid(row=0, column=0)
+
+    # Label for remap name.
+    label_remap_source_name = tk.Label(labelframe_remap_source, text="Remap Name", width=20)
+    label_remap_source_name.grid(row=0, column=1)
+
+    # Entry for source ID.
+    global entry_remap_source_source
+    entry_remap_source_source = tk.Entry(labelframe_remap_source, bd=1, width=6)
+    entry_remap_source_source.grid(row=1, column=0)
+
+    # Entry for remap name.
+    global entry_remap_source_name
+    entry_remap_source_name = tk.Entry(labelframe_remap_source, bd=1, width=20)
+    entry_remap_source_name.grid(row=1, column=1)
+
+    # Button for remapping sources.
+    button_remap_source = tk.Button(labelframe_remap_source, text="Create Remap Source",
+                                    command=create_remapped_source, width=26)
+    button_remap_source.grid(row=2, column=0, columnspan=2)
+
     ''' Source List '''
     # Setting up frame for the source list
     labelframe_source_list = tk.LabelFrame(window, text="Source List", padx=5, pady=5)
@@ -126,14 +154,14 @@ def setup_window():
     label_create_loopback_sink = tk.Label(labelframe_create_loopback, text="Sink", width=7)
     label_create_loopback_sink.grid(row=0, column=0)
 
+    # Label for source ID.
+    label_create_loopback_source = tk.Label(labelframe_create_loopback, text="Source", width=7)
+    label_create_loopback_source.grid(row=0, column=1)
+
     # Entry for sink ID.
     global entry_create_loopback_sink
     entry_create_loopback_sink = tk.Entry(labelframe_create_loopback, bd=1, width=7)
     entry_create_loopback_sink.grid(row=1, column=0)
-
-    # Label for source ID.
-    label_create_loopback_source = tk.Label(labelframe_create_loopback, text="Source", width=7)
-    label_create_loopback_source.grid(row=0, column=1)
 
     # Entry for source ID.
     global entry_create_loopback_source
@@ -190,6 +218,7 @@ def setup_window():
     ''' Final Initialization '''
     refresh_lists()
     entry_create_sink.insert(0, "Default_Sink_Name")
+    entry_remap_source_name.insert(0, "Default_Remap_Name")
 
     window.mainloop()
 
@@ -412,6 +441,7 @@ def on_select_source_list(evt):
     '''
     global listbox_source_list
     global entry_create_loopback_source
+    global entry_remap_source_source
     if len(listbox_source_list.curselection()) > 0:
         # Took this part from StackOverflow
         index = int(listbox_source_list.curselection()[0])
@@ -419,6 +449,8 @@ def on_select_source_list(evt):
         split_value = value.split("   ")
         entry_create_loopback_source.delete(0, tk.END)
         entry_create_loopback_source.insert(0, split_value[0])
+        entry_remap_source_source.delete(0, tk.END)
+        entry_remap_source_source.insert(0, split_value[0])
     else:
         pass
 
@@ -466,6 +498,40 @@ def create_virtual_sink():
         log(INFO, "create_virtual_sink", "Creation of virtual sink with name \"" + input_name + "\" was successful.")
     else:
         log(ERROR, "create_virtual_sink", "Unexpected Error Value:", returned_value)
+    refresh_lists()
+
+
+def create_remapped_source():
+    '''
+    When button_remap_source is pressed by the user, remap the source with the master specified by
+    entry_remap_source_source and the name and device description specified by entry_remap_source_name.
+    If successful, log in terminal.
+    if unsuccessful, print "ERR" inside entry_remap_source_source and print "Error or Invalid Name!" in
+    entry_remap_source_name.
+    Then Refresh the lists.
+    :return: No return value.
+    '''
+    global entry_remap_source_source
+    global entry_remap_source_name
+    entry_source_id = entry_remap_source_source.get()
+    entry_remap_name = entry_remap_source_name.get()
+    log(INFO, "create_remapped_source", "Attempting to remap source \"" + entry_source_id + "\" with name \"" +
+        entry_remap_name + "\"")
+    returned_value = sp.call("pactl load-module module-remap-source master=" + entry_source_id + " source_name=" +
+                             entry_remap_name + " source_properties=device.description=" + entry_remap_name, shell=True,
+                             stdout=sp.PIPE)
+    if returned_value is 1:
+        entry_remap_source_source.delete(0, tk.END)
+        entry_remap_source_source.insert(0, "ERR")
+        entry_remap_source_name.delete(0, tk.END)
+        entry_remap_source_name.insert(0, "Error or Invalid Name!")
+        log(WARNING, "create_remapped_source", "Attempt to remap source \"" + entry_source_id + "\" with name \"" +
+            entry_remap_name + "\" was not successful.")
+    elif returned_value is 0:
+        log(INFO, "create_remapped_source", "Attempt to remap source \"" + entry_source_id + "\" with name \"" +
+            entry_remap_name + "\" was successful.")
+    else:
+        log(ERROR, "create_remapped_source", "Unexpected Error Value:", returned_value)
     refresh_lists()
 
 
