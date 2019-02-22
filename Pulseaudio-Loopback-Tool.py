@@ -34,7 +34,7 @@ def setup_window():
     ''' Top Frame Box '''
     # Setting up frame for refresh button
     frame_top = tk.Frame(window)
-    frame_top.grid(row=0, column=0, sticky=tk.E+tk.W)
+    frame_top.grid(row=0, column=0, columnspan=6, sticky=tk.E+tk.W)
 
     # Refresh button to refresh the lists.
     button_refresh = tk.Button(frame_top, text="Refresh Lists", command=refresh_lists)
@@ -44,13 +44,27 @@ def setup_window():
     button_open_pavucontrol = tk.Button(frame_top, text="Open pavucontrol", command=open_pavucontrol)
     button_open_pavucontrol.grid(row=0, column=1, padx=5, pady=5)
 
+    ''' Virtual Sink Creation '''
+    # Setting up frame for widgets that create virtual sinks
+    labelframe_create_sink = tk.LabelFrame(window, text="Sink Creation", padx=5, pady=5)
+    labelframe_create_sink.grid(row=1, column=0, padx=5)
+
+    # Setting up user entry for name of virtual sink
+    global entry_create_sink
+    entry_create_sink = tk.Entry(labelframe_create_sink, bd=1, width=20)
+    entry_create_sink.grid(row=0, column=0)
+
+    # Setting up button to create virtual sink
+    button_create_sink = tk.Button(labelframe_create_sink, text="Create Sink", command=create_virtual_sink)
+    button_create_sink.grid(row=1, column=0)
+
     ''' Sink List '''
     # Setting up frame for the sink list.
     labelframe_sink_list = tk.LabelFrame(window, text="Sink List", padx=5, pady=5)
-    labelframe_sink_list.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
+    labelframe_sink_list.grid(row=1, column=1, columnspan=3, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
 
     # Adjusting weights, taken from StackOverflow to have the sink list get bigger as the window gets bigger.
-    window.columnconfigure(0, weight=1)
+    window.columnconfigure(1, weight=1)
     window.rowconfigure(1, weight=1)
 
     labelframe_sink_list.columnconfigure(0, weight=1)
@@ -74,24 +88,10 @@ def setup_window():
     scrollbar_sink_list_horz.grid(row=1, column=0, sticky=tk.S + tk.E + tk.W)
     listbox_sink_list.config(xscrollcommand=scrollbar_sink_list_horz.set)
 
-    ''' Virtual Sink Creation '''
-    # Setting up frame for widgets that create virtual sinks
-    frame_create_sink = tk.Frame(window)
-    frame_create_sink.grid(row=1, column=4, padx=5)
-
-    # Setting up user entry for name of virtual sink
-    global entry_create_sink
-    entry_create_sink = tk.Entry(frame_create_sink, bd=1, width=20)
-    entry_create_sink.grid(row=0, column=0)
-
-    # Setting up button to create virtual sink
-    button_create_sink = tk.Button(frame_create_sink, text="Create Sink", command=create_virtual_sink)
-    button_create_sink.grid(row=1, column=0)
-
     ''' Source List '''
     # Setting up frame for the source list
     labelframe_source_list = tk.LabelFrame(window, text="Source List", padx=5, pady=5)
-    labelframe_source_list.grid(row=2, column=0, columnspan=3, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
+    labelframe_source_list.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
 
     # Adjusting weights, taken from StackOverflow to have the source list get bigger as the window gets bigger.
     window.rowconfigure(2, weight=1)
@@ -119,35 +119,35 @@ def setup_window():
 
     ''' Loopback Creation '''
     # Setting up frame for widgets that connect sources together using loopbacks.
-    frame_create_loopback = tk.Frame(window, padx=5)
-    frame_create_loopback.grid(row=2, column=4)
+    labelframe_create_loopback = tk.LabelFrame(window, text="Loopback Creation", padx=5, pady=5)
+    labelframe_create_loopback.grid(row=2, column=5)
 
     # Label for sink ID.
-    label_create_loopback_sink = tk.Label(frame_create_loopback, text="Sink", width=7)
+    label_create_loopback_sink = tk.Label(labelframe_create_loopback, text="Sink", width=7)
     label_create_loopback_sink.grid(row=0, column=0)
 
     # Entry for sink ID.
     global entry_create_loopback_sink
-    entry_create_loopback_sink = tk.Entry(frame_create_loopback, bd=1, width=7)
+    entry_create_loopback_sink = tk.Entry(labelframe_create_loopback, bd=1, width=7)
     entry_create_loopback_sink.grid(row=1, column=0)
 
     # Label for source ID.
-    label_create_loopback_source = tk.Label(frame_create_loopback, text="Source", width=7)
+    label_create_loopback_source = tk.Label(labelframe_create_loopback, text="Source", width=7)
     label_create_loopback_source.grid(row=0, column=1)
 
     # Entry for source ID.
     global entry_create_loopback_source
-    entry_create_loopback_source = tk.Entry(frame_create_loopback, bd=1, width=7)
+    entry_create_loopback_source = tk.Entry(labelframe_create_loopback, bd=1, width=7)
     entry_create_loopback_source.grid(row=1, column=1)
 
     # Button for loopback creation
-    button_create_loopback = tk.Button(frame_create_loopback, text="Create Loopback", command=create_loopback)
+    button_create_loopback = tk.Button(labelframe_create_loopback, text="Create Loopback", command=create_loopback)
     button_create_loopback.grid(row=3, column=0, columnspan=2)
 
     ''' Module List '''
     # Setting up frame for the module list
     labelframe_module_list = tk.LabelFrame(window, text="Module List", padx=5, pady=5)
-    labelframe_module_list.grid(row=3, column=0, columnspan=3, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
+    labelframe_module_list.grid(row=3, column=1, columnspan=3, padx=5, pady=5, sticky=tk.N + tk.S + tk.E + tk.W)
 
     # Adjusting weights, taken from StackOverflow to have the source list get bigger as the window gets bigger.
     window.rowconfigure(3, weight=1)
@@ -175,19 +175,19 @@ def setup_window():
 
     ''' Module Removal '''
     # Setting up frame for widgets to remove modules.
-    frame_remove_module = tk.Frame(window)
-    frame_remove_module.grid(row=3, column=4, padx=5)
+    labelframe_remove_module = tk.LabelFrame(window, text="Module Removal", padx=5, pady=5)
+    labelframe_remove_module.grid(row=3, column=5, padx=5)
 
-    # Setting up user entry for name of virtual sink
+    # Setting up user entry to remove module.
     global entry_remove_module
-    entry_remove_module = tk.Entry(frame_remove_module, bd=1, width=4)
+    entry_remove_module = tk.Entry(labelframe_remove_module, bd=1, width=4)
     entry_remove_module.grid(row=0, column=0)
 
-    # Setting up button to create virtual sink
-    button_remove_module = tk.Button(frame_remove_module, text="Remove Module", command=remove_module)
+    # Setting up button to remove module.
+    button_remove_module = tk.Button(labelframe_remove_module, text="Remove Module", command=remove_module)
     button_remove_module.grid(row=0, column=1)
 
-    # Initialize basic things
+    ''' Final Initialization '''
     refresh_lists()
     entry_create_sink.insert(0, "Default_Sink_Name")
 
