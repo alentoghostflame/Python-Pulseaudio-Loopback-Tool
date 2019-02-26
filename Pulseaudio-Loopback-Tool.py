@@ -98,7 +98,7 @@ def setup_window():
     label_remap_source_source.grid(row=0, column=0)
 
     # Label for remap name.
-    label_remap_source_name = tk.Label(labelframe_remap_source, text="Remap Name", width=20)
+    label_remap_source_name = tk.Label(labelframe_remap_source, text="Remapped Name", width=20)
     label_remap_source_name.grid(row=0, column=1)
 
     # Entry for source ID.
@@ -112,7 +112,7 @@ def setup_window():
     entry_remap_source_name.grid(row=1, column=1)
 
     # Button for remapping sources.
-    button_remap_source = tk.Button(labelframe_remap_source, text="Create Remap Source",
+    button_remap_source = tk.Button(labelframe_remap_source, text="Create Remapped Source",
                                     command=create_remapped_source, width=26)
     button_remap_source.grid(row=2, column=0, columnspan=2)
 
