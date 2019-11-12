@@ -27,8 +27,8 @@ def setup_logging():
 
     os.makedirs("logs", exist_ok=True)
     time_string = datetime.now().isoformat()
-    log_file_handler = logging.FileHandler("logs/XBeer {}.log".format(time_string), mode="w+")
-    log_latest_handler = logging.FileHandler("logs/XBeer Latest.log", mode="w+")
+    log_file_handler = logging.FileHandler("logs/PALT {}.log".format(time_string), mode="w+")
+    log_latest_handler = logging.FileHandler("logs/PALT Latest.log", mode="w+")
 
     log_file_handler.setFormatter(log_format)
     log_latest_handler.setFormatter(log_format)
