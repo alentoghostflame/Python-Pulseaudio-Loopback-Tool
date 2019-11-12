@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 '''
 Simple(ish) program to allow a user to quickly make basic virtual sinks and loopbacks in Pulseaudio
 using a GUI and not having to interact with the command line.
@@ -591,4 +590,4 @@ def remove_module():
     refresh_lists()
 
 
-main()
+# main()
