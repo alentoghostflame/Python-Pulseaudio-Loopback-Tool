@@ -27,15 +27,15 @@ def setup_logging():
 
     os.makedirs("logs", exist_ok=True)
     time_string = datetime.now().isoformat()
-    log_file_handler = logging.FileHandler("logs/PALT {}.log".format(time_string), mode="w+")
+    # log_file_handler = logging.FileHandler("logs/PALT {}.log".format(time_string), mode="w+")
     log_latest_handler = logging.FileHandler("logs/PALT Latest.log", mode="w+")
 
-    log_file_handler.setFormatter(log_format)
+    # log_file_handler.setFormatter(log_format)
     log_latest_handler.setFormatter(log_format)
     log_console_handler = logging.StreamHandler(sys.stdout)
     log_console_handler.setFormatter(log_format)
 
-    setup_logger.addHandler(log_file_handler)
+    # setup_logger.addHandler(log_file_handler)
     setup_logger.addHandler(log_latest_handler)
     setup_logger.addHandler(log_console_handler)
 
@@ -44,7 +44,7 @@ def setup_logging():
 
 
 try:
-    text = 'This is a test program. it demonstrates blah blah balh whatever.'
+    text = 'This is a test program. it demonstrates blah blah blah whatever.'
     parser = argparse.ArgumentParser(description=text)
     parser.add_argument("-r", "--rewrite", help="Use rewritten version", action="store_true")
     args = parser.parse_args()
