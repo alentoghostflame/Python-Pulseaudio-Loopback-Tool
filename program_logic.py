@@ -1,6 +1,5 @@
 import subprocess
 import traceback
-import tkinter
 import logging
 import sys
 
@@ -39,24 +38,6 @@ def list_modules():
     return output
 
 
-def process_list(inputlist):
-    '''
-    Takes an input list and processes it to make it easier to work with later on. Used with the list_*() functions.
-    :param inputlist: A string that consists of at least 1 line and 1 tab, typically from the list_*() functions.
-    :return: A 2D list, with each sentence being the first dimension and each part of the sentence separated by tabs
-    being the second dimension.
-    '''
-    splitlinelist = inputlist.splitlines()
-    output = []
-    for line in splitlinelist:
-        attachment = []
-        splitline = line.split("\t")
-        for part in splitline:
-            attachment.append(part)
-        output.append(attachment)
-    return output
-
-
 def color_tag(state):
     '''
     Used to convert a state to a color then output that color for the devices
@@ -64,7 +45,6 @@ def color_tag(state):
     :param state: A string.
     :return: A color for use by tkinter.
     '''
-    # output = "default"
     if state == "RUNNING":
         output = "green"
     elif state == "IDLE":
@@ -76,87 +56,17 @@ def color_tag(state):
     return output
 
 
-def process_attribute(input_list, args):
-    '''
-    This function takes a line of different attributes separated with spaces, and outputs the ones specified in args
-    in the order given.
-    :param input_list: A string containing a list of attributes separated with spaces.
-    :param args: String(s) containing the name of the attribute you are looking for. Multiple strings can be given.
-    :return: A list of strings containing the attribute and its value.
-    '''
-    output = []
-    attribute_list = input_list.split(" ")
-    for attribute in attribute_list:
-        for argument in args:
-            if attribute[:len(argument)] == argument:
-                output.append(attribute)
-
-    return output
-
-
-def process_module(input_module, *args):
-    '''
-    This function takes a list of strings that correspond to a single line from "pactl list modules short" and what
-    attributes you want listed and returns a proper string name for displaying.
-    :param input_module: List of strings containing information about the module in the following order:
-    id, module name, (optional) attributes.
-    :param args: String(s) containing the name of the attribute you are looking for. Multiple strings can be given.
-    :return: Formatted string for displaying in a listbox.
-    '''
-    output = input_module[0] + "   " + input_module[1]
-    if len(input_module) > 2:
-        attribute_list = process_attribute(input_module[2], args)
-        for attribute in attribute_list:
-            output += "   " + attribute
-    return output
-
-
-def process_module_list(input_list):
-    '''
-    This function is passed a string input from "pactl list modules short" and organizes it as needed.
-    :param input_list: A string with at least 1 line, and at least 2 different items separated by tabs.
-    :return: A list of shortened names of applicable modules.
-    '''
-    processed_list = process_list(input_list)
-    devices = []
-    for item in processed_list:
-        if len(item) < 2:
-            # log(WARNING, "process_module_list", "Module with less than 2 items found: \"" + str(item) + "\"")
-            logger.warning("Module with less than 2 items found: {}".format(item))
-        # If the item is some sort of null sink (because it could be made via this program):
-        elif item[1] == "module-null-sink":
-            temp = process_module(item, "sink_name")
-            devices.append(temp)
-        # If the item is some sort of loopback (because it could be made via this program):
-        elif item[1] == "module-loopback":
-            temp = process_module(item, "sink", "source")
-            devices.append(temp)
-        # If the item is some sort of null source (because it could be made via this program):
-        elif item[1] == "module-null-source":
-            temp = process_module(item, "source_name")
-            devices.append(temp)
-        # If the item is some sort of remapped source (because it could be made via this program):
-        elif item[1] == "module-remap-source":
-            temp = process_module(item, "source_name", "master")
-            devices.append(temp)
-        else:
-            # If its not any of the modules listed above, this program doesnt care about it.
-            pass
-    return devices
-
-
 """
 import subprocess
 output = subprocess.getoutput("pactl list sinks short")
 """
 
 
-def reworked_process_short_audio_list(raw_list_string: str) -> list:
+def process_short_audio_list(raw_list_string: str) -> list:
     # Made specifically for processing the short sink and source lists.
     list_of_strings = raw_list_string.split("\n")
     device_list = list()
     for string in list_of_strings:
-        # raw_device_list.append(string.split("\t"))
         device_list.append(short_audio_listing_to_dict(string))
     return device_list
 
@@ -173,10 +83,59 @@ def short_audio_listing_to_dict(raw_listing_string: str) -> dict:
                 "nice_name": "BAD BAD BAD"}
 
 
-def reworked_get_source_list():
-    return reworked_process_short_audio_list(list_sources())
+def get_source_list():
+    return process_short_audio_list(list_sources())
 
 
 def reworked_get_sink_list():
-    return reworked_process_short_audio_list(list_sinks())
+    return process_short_audio_list(list_sinks())
+
+
+"""
+Start of module creation.
+"""
+
+
+def create_loopback(source_id, sink_id):
+    logger.info("Creating a loopback.")
+    logger.debug("Creating a loopback with source {} and sink {}".format(source_id, sink_id))
+    returned_value = subprocess.call("pactl load-module module-loopback sink={} source={} latency_msec=5".format(
+        sink_id, source_id), shell=True, stdout=subprocess.PIPE)
+    if returned_value is 1:
+        logger.warning("Creation of loopback with source {} and sink {} failed!".format(source_id, sink_id))
+    elif returned_value is 0:
+        logger.debug("Creation of loopback with source {} and sink {} successful.".format(source_id, sink_id))
+    else:
+        logger.error("Creation of loopback with source {} and sink {} failed with an unexpected error: {}".format(
+            source_id, sink_id, returned_value))
+    return returned_value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

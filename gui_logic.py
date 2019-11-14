@@ -1,6 +1,5 @@
 from tkinter import ttk
 import program_logic
-import functools
 import traceback
 import logging
 import tkinter
@@ -34,7 +33,8 @@ class PaltGui:
         self.tab_controller = ttk.Notebook(self.window)
         self.loopback_tab = LoopbackTab(self.window)
 
-        # self.style = ttk.Style()
+        self.style = ttk.Style()
+        setup_style(self.style)
 
     def run_gui(self):
         # self.window = tkinter.Tk()
@@ -47,6 +47,7 @@ class PaltGui:
         window.geometry("500x300")
         window.columnconfigure(0, weight=1)
         window.rowconfigure(1, weight=1)
+        window.configure(background="#3a3a3a")
 
         # tab_master = ttk.Notebook(window)
         self.tab_controller.grid(column=0, row=1, sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W)
@@ -65,7 +66,7 @@ class PaltGui:
 
     def global_refresh(self):
         logger.info("Global refresh triggered.")
-        source_list = program_logic.reworked_get_source_list()
+        source_list = program_logic.get_source_list()
         sink_list = program_logic.reworked_get_sink_list()
         self.loopback_tab.refresh(source_list, sink_list)
 
@@ -81,7 +82,7 @@ class LoopbackTab(ttk.Frame):
         self.text_name = "Loopback"
         self.parent = parent_notebook
 
-        self.source_list = SourceSinkList(self, "Source List")
+        self.source_list = SourceSinkList(self, "Source List", self._on_source_list_click)
         self.source_list.grid(column=0, row=0, rowspan=2, sticky=tkinter.NSEW)
 
         self.source_label = ttk.Label(self, text="Source")
@@ -91,7 +92,7 @@ class LoopbackTab(ttk.Frame):
 
         self.loopback_label = ttk.Label(self, text="will pipe sound to")
         self.loopback_label.grid(column=2, row=0, sticky=tkinter.S)
-        self.loopback_button = ttk.Button(self, text="Create Loopback")
+        self.loopback_button = ttk.Button(self, text="Create Loopback", command=self.create_loopback)
         self.loopback_button.grid(column=2, row=1, padx=5, pady=5, sticky=tkinter.N)
 
         self.sink_label = ttk.Label(self, text="Sink")
@@ -99,16 +100,45 @@ class LoopbackTab(ttk.Frame):
         self.sink_entry = ttk.Entry(self, width=6)
         self.sink_entry.grid(column=3, row=1, padx=5, pady=5, sticky=tkinter.N)
 
-        self.sink_list = SourceSinkList(self, "Sink List")
+        self.sink_list = SourceSinkList(self, "Sink List", self._on_sink_list_click)
         self.sink_list.grid(column=4, row=0, rowspan=2, sticky=tkinter.NSEW)
 
-        self.configure_weights()
+        self._configure_weights()
 
-    def configure_weights(self):
+    def _configure_weights(self):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(4, weight=1)
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
+
+    def _on_source_list_click(self, evt):
+        selection = self.source_list.list_box.curselection()
+        if len(selection) > 0:
+            index = selection[0]
+            self.source_entry.delete(0, tkinter.END)
+            self.source_entry.insert(0, self.source_list.given_item_list[index]["id"])
+
+    def _on_sink_list_click(self, evt):
+        selection = self.sink_list.list_box.curselection()
+        if len(selection) > 0:
+            index = selection[0]
+            self.sink_entry.delete(0, tkinter.END)
+            self.sink_entry.insert(0, self.sink_list.given_item_list[index]["id"])
+
+    def create_loopback(self):
+        source_id = self.source_entry.get()
+        sink_id = self.sink_entry.get()
+        value = program_logic.create_loopback(source_id, sink_id)
+        if value is not 0:
+            self.source_entry.delete(0, tkinter.END)
+            self.source_entry.insert(0, "ERR")
+            self.sink_entry.delete(0, tkinter.END)
+            self.sink_entry.insert(0, "ERR")
+        else:
+            logger.info("Local refresh triggered.")
+            source_list = program_logic.get_source_list()
+            sink_list = program_logic.reworked_get_sink_list()
+            self.refresh(source_list, sink_list)
 
     def refresh(self, source_list, sink_list):
         self.source_list.refresh(source_list)
@@ -116,22 +146,26 @@ class LoopbackTab(ttk.Frame):
 
 
 class SourceSinkList(ttk.LabelFrame):
-    def __init__(self, parent, name, **kwargs):
+    def __init__(self, parent, name, on_click_function, **kwargs):
         super().__init__(parent, text=name, **kwargs)
 
-        self.list_box = self.list_box = tkinter.Listbox(self)
+        self.given_item_list = []
+
+        self.list_box = tkinter.Listbox(self)
         self.vertical_scrollbar = ttk.Scrollbar(self, orient="vertical")
         self.horizontal_scrollbar = ttk.Scrollbar(self, orient="horizontal")
 
-        self.configure_list_box()
+        self.configure_list_box(on_click_function)
         self.configure_vertical_scrollbar(self.list_box)
         self.configure_horizontal_scrollbar(self.list_box)
 
         self.configure_weights()
 
-    def configure_list_box(self):
+    def configure_list_box(self, on_click_function):
         self.list_box = tkinter.Listbox(self)
         self.list_box.grid(column=0, row=0, sticky=tkinter.NSEW)
+        self.list_box.bind("<ButtonRelease-1>", on_click_function)
+        self.list_box.configure(background="#323232", relief="flat", borderwidth=0, highlightthickness=0)
 
     def configure_vertical_scrollbar(self, list_box):
         self.vertical_scrollbar.config(command=list_box.yview)
@@ -152,38 +186,28 @@ class SourceSinkList(ttk.LabelFrame):
         for i in range(len(item_list)):
             self.list_box.insert(tkinter.END, item_list[i]["nice_name"])
             self.list_box.itemconfig(i, {"bg": item_list[i]["color"]})
+        self.given_item_list = item_list
 
 
+def setup_style(style_object: ttk.Style):
+    style_object.theme_use("clam")
 
+    style_object.configure("TFrame", background="#3a3a3a")
 
+    style_object.configure("TNotebook", lightcolor="#242424", darkcolor="#242424", bordercolor="#242424",
+                           background="#3a3a3a", relief="flat")
+    style_object.configure("TNotebook.Tab", background="#323232", bordercolor="#2d2d2d", relief="flat",
+                           foreground="white")
+    style_object.map("TNotebook.Tab", background=[("selected", "#df4a16"), ("active", "#3c3c3c")])
 
+    style_object.configure("TLabelframe.Label", background="#3a3a3a", foreground="white")
+    style_object.configure("TLabelframe", background="#3a3a3a", darkcolor="#242424", lightcolor="#242424",
+                           bordercolor="#242424")
 
+    style_object.configure("TScrollbar", background="#868686", troughcolor="#323232", bordercolor="#323232")
 
+    style_object.configure("TLabel", background="#3a3a3a", foreground="white")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    style_object.configure("TButton", background="#393939", foreground="white", bordercolor="#242424",
+                           darkcolor="#242424", lightcolor="#242424")
+    style_object.map("TButton", background=[("pressed", "#202020"), ("active", "#3c3c3c")])
