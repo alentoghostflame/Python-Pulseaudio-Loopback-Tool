@@ -155,29 +155,29 @@ class SourceSinkList(ttk.LabelFrame):
         self.vertical_scrollbar = ttk.Scrollbar(self, orient="vertical")
         self.horizontal_scrollbar = ttk.Scrollbar(self, orient="horizontal")
 
-        self.configure_list_box(on_click_function)
-        self.configure_vertical_scrollbar(self.list_box)
-        self.configure_horizontal_scrollbar(self.list_box)
+        self._configure_list_box(on_click_function)
+        self._configure_vertical_scrollbar(self.list_box)
+        self._configure_horizontal_scrollbar(self.list_box)
 
-        self.configure_weights()
+        self._configure_weights()
 
-    def configure_list_box(self, on_click_function):
+    def _configure_list_box(self, on_click_function):
         self.list_box = tkinter.Listbox(self)
         self.list_box.grid(column=0, row=0, sticky=tkinter.NSEW)
         self.list_box.bind("<ButtonRelease-1>", on_click_function)
         self.list_box.configure(background="#323232", relief="flat", borderwidth=0, highlightthickness=0)
 
-    def configure_vertical_scrollbar(self, list_box):
+    def _configure_vertical_scrollbar(self, list_box):
         self.vertical_scrollbar.config(command=list_box.yview)
         self.vertical_scrollbar.grid(column=1, row=0, sticky=tkinter.NS + tkinter.E)
         list_box.config(yscrollcommand=self.vertical_scrollbar.set)
 
-    def configure_horizontal_scrollbar(self, list_box):
+    def _configure_horizontal_scrollbar(self, list_box):
         self.horizontal_scrollbar.config(command=list_box.xview)
         self.horizontal_scrollbar.grid(column=0, row=1, sticky=tkinter.S + tkinter.EW)
         list_box.config(xscrollcommand=self.horizontal_scrollbar.set)
 
-    def configure_weights(self):
+    def _configure_weights(self):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
@@ -190,6 +190,11 @@ class SourceSinkList(ttk.LabelFrame):
 
 
 def setup_style(style_object: ttk.Style):
+    """
+    All the ttk style changes go in here.
+    :param style_object: style object to configure and map.
+    :return:
+    """
     style_object.theme_use("clam")
 
     style_object.configure("TFrame", background="#3a3a3a")
