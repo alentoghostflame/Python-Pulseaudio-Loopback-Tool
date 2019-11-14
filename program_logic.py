@@ -19,26 +19,39 @@ sys.excepthook = log_exception_handler
 
 
 def open_pavucontrol():
+    """
+    Shortcut for opening pavucontrol.
+    :return:
+    """
     logger.info("Opening pavucontrol.")
     subprocess.Popen("pavucontrol", shell=True, stdout=subprocess.PIPE)
 
 
-def list_sinks():
-    output = subprocess.getoutput("pactl list sinks short")
-    return output
+def list_sources() -> str:
+    """
+    Shortcut for the pactl list sources short command.
+    :return: String output from the command.
+    """
+    return subprocess.getoutput("pactl list sources short")
 
 
-def list_sources():
-    output = subprocess.getoutput("pactl list sources short")
-    return output
+def list_sinks() -> str:
+    """
+    Shortcut for the pactl list sinks short command.
+    :return: String output from the command.
+    """
+    return subprocess.getoutput("pactl list sinks short")
 
 
-def list_modules():
-    output = subprocess.getoutput("pactl list modules short")
-    return output
+def list_modules() -> str:
+    """
+    Shortcut for the pactl list modules short command.
+    :return: String output from the command.
+    """
+    return subprocess.getoutput("pactl list modules short")
 
 
-def color_tag(state):
+def color_tag(state: str) -> str:
     '''
     Used to convert a state to a color then output that color for the devices
     in listbox_sink_list and listbox_source_list.
@@ -62,16 +75,21 @@ output = subprocess.getoutput("pactl list sinks short")
 """
 
 
-def process_short_audio_list(raw_list_string: str) -> list:
+def _process_short_audio_list(raw_list_string: str) -> list:
     # Made specifically for processing the short sink and source lists.
+    """
+    Made for processing the output of list_sources() and list_sinks()
+    :param raw_list_string:
+    :return: List of dictionaries
+    """
     list_of_strings = raw_list_string.split("\n")
     device_list = list()
     for string in list_of_strings:
-        device_list.append(short_audio_listing_to_dict(string))
+        device_list.append(_short_audio_listing_to_dict(string))
     return device_list
 
 
-def short_audio_listing_to_dict(raw_listing_string: str) -> dict:
+def _short_audio_listing_to_dict(raw_listing_string: str) -> dict:
     raw_listing = raw_listing_string.split("\t")
     if len(raw_listing) == 5:
         nice_name = "{} {} {}".format(raw_listing[0], raw_listing[1], raw_listing[4])
@@ -83,12 +101,12 @@ def short_audio_listing_to_dict(raw_listing_string: str) -> dict:
                 "nice_name": "BAD BAD BAD"}
 
 
-def get_source_list():
-    return process_short_audio_list(list_sources())
+def get_source_list() -> list:
+    return _process_short_audio_list(list_sources())
 
 
-def reworked_get_sink_list():
-    return process_short_audio_list(list_sinks())
+def reworked_get_sink_list() -> list:
+    return _process_short_audio_list(list_sinks())
 
 
 """
@@ -96,7 +114,13 @@ Start of module creation.
 """
 
 
-def create_loopback(source_id, sink_id):
+def create_loopback(source_id: str, sink_id: str):
+    """
+    Creates a loopback with the given source id and sink id.
+    :param source_id:
+    :param sink_id:
+    :return:
+    """
     logger.info("Creating a loopback.")
     logger.debug("Creating a loopback with source {} and sink {}".format(source_id, sink_id))
     returned_value = subprocess.call("pactl load-module module-loopback sink={} source={} latency_msec=5".format(
