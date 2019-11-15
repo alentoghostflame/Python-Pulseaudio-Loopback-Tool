@@ -9,13 +9,13 @@ import sys
 logger = logging.getLogger("Main")
 
 
-def log_exception_handler(type, value, tb):
+def log_exception_handler(error_type, value, tb):
     # TODO: Unify logging errors.
     the_logger = logging.getLogger("Main")
     the_logger.critical("Uncaught exception:\n"
                         "Type: {}\n"
                         "Value: {}\n"
-                        "Traceback:\n {}".format(str(type), str(value), "".join(traceback.format_tb(tb))))
+                        "Traceback:\n {}".format(str(error_type), str(value), "".join(traceback.format_tb(tb))))
 
 
 sys.excepthook = log_exception_handler
@@ -30,83 +30,95 @@ class PaltGui:
     def __init__(self):
         self.window = tkinter.Tk()
         self.window_name = "PulseAudio Loopback Tool"
+        self.global_refresh_button = ttk.Button(self.window, text="Refresh All", command=self.global_refresh)
         self.tab_controller = ttk.Notebook(self.window)
-        self.loopback_tab = LoopbackTab(self.window)
-        self.delete_tab = DeleteModuleTab(self.window)
-
+        self.loopback_tab = LoopbackTab(self.tab_controller, self.global_refresh)
+        self.delete_tab = DeleteModuleTab(self.tab_controller, self.global_refresh)
         self.style = ttk.Style()
         setup_style(self.style)
 
+        self._configure_window()
+        self._configure_refresh_button()
+        self._configure_tab_holder()
+
     def run_gui(self):
-        # self.window = tkinter.Tk()
-        self.setup_gui(self.window)
+        self.global_refresh()
         self.window.mainloop()
 
-    def setup_gui(self, window):
-        # self.style.configure("BW.TLabel", foreground="black", background="white")
-        window.title(self.window_name)
-        window.geometry("500x300")
-        window.columnconfigure(0, weight=1)
-        window.rowconfigure(1, weight=1)
-        window.configure(background="#3a3a3a")
+    def _configure_window(self):
+        self.window.title(self.window_name)
+        self.window.geometry("500x300")
+        self.window.columnconfigure(0, weight=1)
+        self.window.rowconfigure(1, weight=1)
+        self.window.configure(background="#3a3a3a")
 
-        # tab_master = ttk.Notebook(window)
-        self.tab_controller.grid(column=0, row=1, sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W)
-        # tab1 = LoopbackTab(window)
-        tab2 = ttk.Frame(self.tab_controller)
-        tab3 = ttk.Frame(self.tab_controller)
+    def _configure_refresh_button(self):
+        self.global_refresh_button.grid(column=0, row=0)
+
+    def _configure_tab_holder(self):
+        self.tab_controller.grid(column=0, row=1, sticky=tkinter.NSEW)
         self.tab_controller.add(self.loopback_tab, text=self.loopback_tab.text_name)
-        self.tab_controller.add(tab2, text="Tab Two")
         self.tab_controller.add(self.delete_tab, text=self.delete_tab.text_name)
-
-        lol = ttk.Label(tab2, text="Hello!")
-        lol.grid(column=0, row=0)
-
-        global_refresh = ttk.Button(window, text="Refresh All", command=self.global_refresh)
-        global_refresh.grid(column=0, row=0)
 
     def global_refresh(self):
         logger.info("Global refresh triggered.")
         source_list = program_logic.get_source_list()
         sink_list = program_logic.get_sink_list()
         module_list = program_logic.get_module_list()
+
         self.loopback_tab.refresh(source_list, sink_list)
         self.delete_tab.refresh(module_list)
 
 
-class TabController:
-    def __init__(self, parent):
-        self.parent = parent
-
-
 class LoopbackTab(ttk.Frame):
-    def __init__(self, parent_notebook, **kwargs):
+    def __init__(self, parent_notebook: ttk.Notebook, global_refresh_function, **kwargs):
         super().__init__(parent_notebook, **kwargs)
         self.text_name = "Loopback"
-        self.parent = parent_notebook
+        self.global_refresh_function = global_refresh_function
 
         self.source_list = SourceSinkList(self, "Source List", self._on_source_list_click)
-        self.source_list.grid(column=0, row=0, rowspan=2, sticky=tkinter.NSEW)
-
         self.source_label = ttk.Label(self, text="Source")
-        self.source_label.grid(column=1, row=0, sticky=tkinter.S)
         self.source_entry = ttk.Entry(self, width=6)
-        self.source_entry.grid(column=1, row=1, padx=5, pady=5, sticky=tkinter.N)
-
         self.loopback_label = ttk.Label(self, text="will pipe sound to")
-        self.loopback_label.grid(column=2, row=0, sticky=tkinter.S)
         self.loopback_button = ttk.Button(self, text="Create Loopback", command=self.create_loopback)
-        self.loopback_button.grid(column=2, row=1, padx=5, pady=5, sticky=tkinter.N)
-
         self.sink_label = ttk.Label(self, text="Sink")
-        self.sink_label.grid(column=3, row=0, sticky=tkinter.S)
         self.sink_entry = ttk.Entry(self, width=6)
-        self.sink_entry.grid(column=3, row=1, padx=5, pady=5, sticky=tkinter.N)
-
         self.sink_list = SourceSinkList(self, "Sink List", self._on_sink_list_click)
-        self.sink_list.grid(column=4, row=0, rowspan=2, sticky=tkinter.NSEW)
+
+        self._configure_source_list()
+        self._configure_source_label()
+        self._configure_source_entry()
+        self._configure_loopback_label()
+        self._configure_loopback_button()
+        self._configure_sink_label()
+        self._configure_sink_entry()
+        self._configure_sink_list()
 
         self._configure_weights()
+
+    def _configure_source_list(self):
+        self.source_list.grid(column=0, row=0, rowspan=2, sticky=tkinter.NSEW)
+
+    def _configure_source_label(self):
+        self.source_label.grid(column=1, row=0, sticky=tkinter.S)
+
+    def _configure_source_entry(self):
+        self.source_entry.grid(column=1, row=1, padx=5, pady=5, sticky=tkinter.N)
+
+    def _configure_loopback_label(self):
+        self.loopback_label.grid(column=2, row=0, sticky=tkinter.S)
+
+    def _configure_loopback_button(self):
+        self.loopback_button.grid(column=2, row=1, padx=5, pady=5, sticky=tkinter.N)
+
+    def _configure_sink_label(self):
+        self.sink_label.grid(column=3, row=0, sticky=tkinter.S)
+
+    def _configure_sink_entry(self):
+        self.sink_entry.grid(column=3, row=1, padx=5, pady=5, sticky=tkinter.N)
+
+    def _configure_sink_list(self):
+        self.sink_list.grid(column=4, row=0, rowspan=2, sticky=tkinter.NSEW)
 
     def _configure_weights(self):
         self.columnconfigure(0, weight=1)
@@ -138,10 +150,7 @@ class LoopbackTab(ttk.Frame):
             self.sink_entry.delete(0, tkinter.END)
             self.sink_entry.insert(0, "ERR")
         else:
-            logger.info("Local refresh triggered.")
-            source_list = program_logic.get_source_list()
-            sink_list = program_logic.get_sink_list()
-            self.refresh(source_list, sink_list)
+            self.global_refresh_function()
 
     def refresh(self, source_list, sink_list):
         self.source_list.refresh(source_list)
@@ -149,10 +158,10 @@ class LoopbackTab(ttk.Frame):
 
 
 class DeleteModuleTab(ttk.Frame):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, global_refresh_function, **kwargs):
         super().__init__(parent, **kwargs)
         self.text_name = "Remove"
-        self.parent = parent
+        self.global_refresh_function = global_refresh_function
 
         self.module_list = SourceSinkList(self, "Relevant Modules", self._on_module_list_click)
         self.delete_entry = ttk.Entry(self, width=6)
@@ -192,9 +201,7 @@ class DeleteModuleTab(ttk.Frame):
             self.delete_entry.delete(0, tkinter.END)
             self.delete_entry.insert(0, "ERR")
         else:
-            logger.info("Local refresh triggered.")
-            module_list = program_logic.get_module_list()
-            self.refresh(module_list)
+            self.global_refresh_function()
 
     def refresh(self, module_list):
         self.module_list.refresh(module_list)

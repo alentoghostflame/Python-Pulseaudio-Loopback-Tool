@@ -6,13 +6,13 @@ import sys
 logger = logging.getLogger("Main")
 
 
-def log_exception_handler(type, value, tb):
+def log_exception_handler(error_type, value, tb):
     # TODO: Unify logging errors.
     the_logger = logging.getLogger("Main")
     the_logger.critical("Uncaught exception:\n"
                         "Type: {}\n"
                         "Value: {}\n"
-                        "Traceback:\n {}".format(str(type), str(value), "".join(traceback.format_tb(tb))))
+                        "Traceback:\n {}".format(str(error_type), str(value), "".join(traceback.format_tb(tb))))
 
 
 sys.excepthook = log_exception_handler
@@ -51,15 +51,17 @@ def list_modules() -> str:
     return subprocess.getoutput("pactl list modules short")
 
 
-
-
-
 """
 Start of information processing.
 """
 
 
 def _short_audio_listing_to_dict(raw_listing_string: str) -> dict:
+    """
+    Takes a tab separated string in the sequence of "ID Name Driver Specification State" and turns it into a dictionary.
+    :param raw_listing_string:
+    :return:
+    """
     raw_listing = raw_listing_string.split("\t")
     if len(raw_listing) == 5:
         nice_name = "{} {} {}".format(raw_listing[0], raw_listing[1], raw_listing[4])
@@ -72,6 +74,12 @@ def _short_audio_listing_to_dict(raw_listing_string: str) -> dict:
 
 
 def _short_module_listing_to_dict(raw_listing_string: str) -> dict:
+    """
+    Takes a tab separated string with the bare minimum sequence of "ID ModuleType" and if applicable to the program,
+    turns it into a filled out dictionary.
+    :param raw_listing_string:
+    :return:
+    """
     listing = raw_listing_string.split("\t")
     module_id = listing[0]
     module_type = listing[1]
@@ -117,14 +125,26 @@ def color_tag(state: str) -> str:
 
 
 def get_source_list() -> list:
+    """
+    Shortcut to getting a list of source dictionaries.
+    :return:
+    """
     return _process_short_list(list_sources(), _short_audio_listing_to_dict)
 
 
 def get_sink_list() -> list:
+    """
+    Shortcut to getting a list of sink dictionaries.
+    :return:
+    """
     return _process_short_list(list_sinks(), _short_audio_listing_to_dict)
 
 
 def get_module_list() -> list:
+    """
+    Shortcut to getting a list of module dictionaries.
+    :return:
+    """
     return _process_short_list(list_modules(), _short_module_listing_to_dict)
 
 
@@ -142,7 +162,7 @@ def create_loopback(source_id: str, sink_id: str):
     """
     logger.info("Creating a loopback.")
     logger.debug("Creating a loopback with source {} and sink {}".format(source_id, sink_id))
-    returned_value = subprocess.call("pactl load-module module-loopback sink={} source={} latency_msec=5".format(
+    returned_value = subprocess.call("pactl load-module module-loopback sink={} source={} latency_msec=1".format(
         sink_id, source_id), shell=True, stdout=subprocess.PIPE)
     if returned_value is 1:
         logger.warning("Creation of loopback with source {} and sink {} failed!".format(source_id, sink_id))
@@ -155,6 +175,11 @@ def create_loopback(source_id: str, sink_id: str):
 
 
 def delete_module(module_id: str):
+    """
+    Deletes/unloads a module with the given module id.
+    :param module_id:
+    :return:
+    """
     logger.info("Removing module.")
     logger.debug("Removing module with an ID of {}".format(module_id))
     returned_value = subprocess.call("pactl unload-module {}".format(module_id), shell=True, stdout=subprocess.PIPE)
@@ -166,33 +191,3 @@ def delete_module(module_id: str):
         logger.error("Removal of module with ID of {} failed with an unexpected error: {}".format(module_id,
                                                                                                   returned_value))
     return returned_value
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
