@@ -32,6 +32,7 @@ class PaltGui:
         self.window_name = "PulseAudio Loopback Tool"
         self.tab_controller = ttk.Notebook(self.window)
         self.loopback_tab = LoopbackTab(self.window)
+        self.delete_tab = DeleteModuleTab(self.window)
 
         self.style = ttk.Style()
         setup_style(self.style)
@@ -56,7 +57,7 @@ class PaltGui:
         tab3 = ttk.Frame(self.tab_controller)
         self.tab_controller.add(self.loopback_tab, text=self.loopback_tab.text_name)
         self.tab_controller.add(tab2, text="Tab Two")
-        self.tab_controller.add(tab3, text="Tab Three")
+        self.tab_controller.add(self.delete_tab, text=self.delete_tab.text_name)
 
         lol = ttk.Label(tab2, text="Hello!")
         lol.grid(column=0, row=0)
@@ -67,8 +68,10 @@ class PaltGui:
     def global_refresh(self):
         logger.info("Global refresh triggered.")
         source_list = program_logic.get_source_list()
-        sink_list = program_logic.reworked_get_sink_list()
+        sink_list = program_logic.get_sink_list()
+        module_list = program_logic.get_module_list()
         self.loopback_tab.refresh(source_list, sink_list)
+        self.delete_tab.refresh(module_list)
 
 
 class TabController:
@@ -137,12 +140,64 @@ class LoopbackTab(ttk.Frame):
         else:
             logger.info("Local refresh triggered.")
             source_list = program_logic.get_source_list()
-            sink_list = program_logic.reworked_get_sink_list()
+            sink_list = program_logic.get_sink_list()
             self.refresh(source_list, sink_list)
 
     def refresh(self, source_list, sink_list):
         self.source_list.refresh(source_list)
         self.sink_list.refresh(sink_list)
+
+
+class DeleteModuleTab(ttk.Frame):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.text_name = "Remove"
+        self.parent = parent
+
+        self.module_list = SourceSinkList(self, "Relevant Modules", self._on_module_list_click)
+        self.delete_entry = ttk.Entry(self, width=6)
+        self.delete_button = ttk.Button(self, text="Delete", command=self.delete_module)
+
+        self._configure_module_list()
+        self._configure_delete_entry()
+        self._configure_delete_button()
+        self._configure_weights()
+
+    def _configure_module_list(self):
+        self.module_list.grid(column=0, row=0, columnspan=2, sticky=tkinter.NSEW)
+        self.module_list.list_box.configure(foreground="white")
+
+    def _configure_delete_entry(self):
+        self.delete_entry.grid(column=0, row=1, sticky=tkinter.E, padx=5, pady=5)
+
+    def _configure_delete_button(self):
+        self.delete_button.grid(column=1, row=1, sticky=tkinter.W, padx=5, pady=5)
+
+    def _configure_weights(self):
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(0, weight=1)
+
+    def _on_module_list_click(self, evt):
+        selection = self.module_list.list_box.curselection()
+        if len(selection) > 0:
+            index = selection[0]
+            self.delete_entry.delete(0, tkinter.END)
+            self.delete_entry.insert(0, self.module_list.given_item_list[index]["id"])
+
+    def delete_module(self):
+        module_id = self.delete_entry.get()
+        value = program_logic.delete_module(module_id)
+        if value is not 0:
+            self.delete_entry.delete(0, tkinter.END)
+            self.delete_entry.insert(0, "ERR")
+        else:
+            logger.info("Local refresh triggered.")
+            module_list = program_logic.get_module_list()
+            self.refresh(module_list)
+
+    def refresh(self, module_list):
+        self.module_list.refresh(module_list)
 
 
 class SourceSinkList(ttk.LabelFrame):

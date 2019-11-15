@@ -51,42 +51,12 @@ def list_modules() -> str:
     return subprocess.getoutput("pactl list modules short")
 
 
-def color_tag(state: str) -> str:
-    '''
-    Used to convert a state to a color then output that color for the devices
-    in listbox_sink_list and listbox_source_list.
-    :param state: A string.
-    :return: A color for use by tkinter.
-    '''
-    if state == "RUNNING":
-        output = "green"
-    elif state == "IDLE":
-        output = "green"
-    elif state == "SUSPENDED":
-        output = "yellow"
-    else:
-        output = "red"
-    return output
+
 
 
 """
-import subprocess
-output = subprocess.getoutput("pactl list sinks short")
+Start of information processing.
 """
-
-
-def _process_short_audio_list(raw_list_string: str) -> list:
-    # Made specifically for processing the short sink and source lists.
-    """
-    Made for processing the output of list_sources() and list_sinks()
-    :param raw_list_string:
-    :return: List of dictionaries
-    """
-    list_of_strings = raw_list_string.split("\n")
-    device_list = list()
-    for string in list_of_strings:
-        device_list.append(_short_audio_listing_to_dict(string))
-    return device_list
 
 
 def _short_audio_listing_to_dict(raw_listing_string: str) -> dict:
@@ -101,12 +71,61 @@ def _short_audio_listing_to_dict(raw_listing_string: str) -> dict:
                 "nice_name": "BAD BAD BAD"}
 
 
+def _short_module_listing_to_dict(raw_listing_string: str) -> dict:
+    listing = raw_listing_string.split("\t")
+    module_id = listing[0]
+    module_type = listing[1]
+    if module_type == "module-loopback":
+        logger.debug("Found module-loopback")
+        attributes = listing[2].split(" ")
+        nice_name = "{} module-loopback {} {}".format(module_id, attributes[1], attributes[0])
+        return {"id": module_id, "name": module_type, "nice_name": nice_name, "color": "#323232"}
+    else:
+        return {}
+
+
+def _process_short_list(raw_list_string: str, processing_function) -> list:
+    """
+    Made for processing the output of list_sources() and list_sinks()
+    :param raw_list_string:
+    :return: List of dictionaries
+    """
+    list_of_strings = raw_list_string.split("\n")
+    device_list = list()
+    for string in list_of_strings:
+        output = processing_function(string)
+        if output != {}:
+            device_list.append(processing_function(string))
+    return device_list
+
+
+def color_tag(state: str) -> str:
+    """
+    Used to translate a given state to a color usable by tkinter.
+    :param state: String
+    :return: String color.
+    """
+    if state == "RUNNING":
+        output = "green"
+    elif state == "IDLE":
+        output = "green"
+    elif state == "SUSPENDED":
+        output = "yellow"
+    else:
+        output = "red"
+    return output
+
+
 def get_source_list() -> list:
-    return _process_short_audio_list(list_sources())
+    return _process_short_list(list_sources(), _short_audio_listing_to_dict)
 
 
-def reworked_get_sink_list() -> list:
-    return _process_short_audio_list(list_sinks())
+def get_sink_list() -> list:
+    return _process_short_list(list_sinks(), _short_audio_listing_to_dict)
+
+
+def get_module_list() -> list:
+    return _process_short_list(list_modules(), _short_module_listing_to_dict)
 
 
 """
@@ -132,6 +151,20 @@ def create_loopback(source_id: str, sink_id: str):
     else:
         logger.error("Creation of loopback with source {} and sink {} failed with an unexpected error: {}".format(
             source_id, sink_id, returned_value))
+    return returned_value
+
+
+def delete_module(module_id: str):
+    logger.info("Removing module.")
+    logger.debug("Removing module with an ID of {}".format(module_id))
+    returned_value = subprocess.call("pactl unload-module {}".format(module_id), shell=True, stdout=subprocess.PIPE)
+    if returned_value is 1:
+        logger.warning("Removal of module with ID of {} failed!".format(module_id))
+    elif returned_value is 0:
+        logger.debug("Removal of module with ID of {} successful.".format(module_id))
+    else:
+        logger.error("Removal of module with ID of {} failed with an unexpected error: {}".format(module_id,
+                                                                                                  returned_value))
     return returned_value
 
 
