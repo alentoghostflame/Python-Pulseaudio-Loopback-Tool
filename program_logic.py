@@ -88,6 +88,11 @@ def _short_module_listing_to_dict(raw_listing_string: str) -> dict:
         attributes = listing[2].split(" ")
         nice_name = "{} module-loopback {} {}".format(module_id, attributes[1], attributes[0])
         return {"id": module_id, "name": module_type, "nice_name": nice_name, "color": "#323232"}
+    elif module_type == "module-null-sink":
+        logger.debug("Found module-null-sink")
+        attributes = listing[2].split(" ")
+        nice_name = "{} module-null-sink {}".format(module_id, attributes[0])
+        return {"id": module_id, "name": module_type, "nice_name": nice_name, "color": "#323232"}
     else:
         return {}
 
@@ -158,7 +163,7 @@ def create_loopback(source_id: str, sink_id: str):
     Creates a loopback with the given source id and sink id.
     :param source_id:
     :param sink_id:
-    :return:
+    :return: Error code from the subprocess call.
     """
     logger.info("Creating a loopback.")
     logger.debug("Creating a loopback with source {} and sink {}".format(source_id, sink_id))
@@ -174,11 +179,31 @@ def create_loopback(source_id: str, sink_id: str):
     return returned_value
 
 
+def create_virtual_sink(sink_name: str):
+    """
+    Creates a virtual/null sink with the given name.
+    :param sink_name:
+    :return: Error code from the subprocess call.
+    """
+    logger.info("Creating a virtual sink.")
+    logger.debug("Creation a virtual sink with name {}".format(sink_name))
+    returned_value = subprocess.call("pactl load-module module-null-sink sink_name={} sink_properties=device.description={} rate=48000".format(
+        sink_name, sink_name), shell=True, stdout=subprocess.PIPE)
+    if returned_value is 1:
+        logger.warning("Creation of virtual sink with name {} failed!".format(sink_name))
+    elif returned_value is 0:
+        logger.debug("Creation of virtual sink with name {} successful.".format(sink_name))
+    else:
+        logger.error("Creation of virtual sink with name {} failed with an unexpected error: {}".format(sink_name,
+                                                                                                        returned_value))
+    return returned_value
+
+
 def delete_module(module_id: str):
     """
     Deletes/unloads a module with the given module id.
     :param module_id:
-    :return:
+    :return: Error code from the subprocess call.
     """
     logger.info("Removing module.")
     logger.debug("Removing module with an ID of {}".format(module_id))

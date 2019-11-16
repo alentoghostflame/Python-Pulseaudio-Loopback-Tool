@@ -33,6 +33,7 @@ class PaltGui:
         self.global_refresh_button = ttk.Button(self.window, text="Refresh All", command=self.global_refresh)
         self.tab_controller = ttk.Notebook(self.window)
         self.loopback_tab = LoopbackTab(self.tab_controller, self.global_refresh)
+        self.virtual_sink_tab = VirtualSinkTab(self.tab_controller, self.global_refresh)
         self.delete_tab = DeleteModuleTab(self.tab_controller, self.global_refresh)
         self.style = ttk.Style()
         setup_style(self.style)
@@ -58,6 +59,7 @@ class PaltGui:
     def _configure_tab_holder(self):
         self.tab_controller.grid(column=0, row=1, sticky=tkinter.NSEW)
         self.tab_controller.add(self.loopback_tab, text=self.loopback_tab.text_name)
+        self.tab_controller.add(self.virtual_sink_tab, text=self.virtual_sink_tab.text_name)
         self.tab_controller.add(self.delete_tab, text=self.delete_tab.text_name)
 
     def global_refresh(self):
@@ -67,6 +69,7 @@ class PaltGui:
         module_list = program_logic.get_module_list()
 
         self.loopback_tab.refresh(source_list, sink_list)
+        self.virtual_sink_tab.refresh(module_list)
         self.delete_tab.refresh(module_list)
 
 
@@ -155,6 +158,63 @@ class LoopbackTab(ttk.Frame):
     def refresh(self, source_list, sink_list):
         self.source_list.refresh(source_list)
         self.sink_list.refresh(sink_list)
+
+
+class VirtualSinkTab(ttk.Frame):
+    def __init__(self, parent, global_refresh_function, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.text_name = "Virtual Sinks"
+        self.global_refresh_function = global_refresh_function
+
+        self.module_list = SourceSinkList(self, "Virtual Sinks", self._on_module_list_click)
+        self.create_label = ttk.Label(self, text="Sink Name: ")
+        self.create_entry = ttk.Entry(self, width=20)
+        self.create_button = ttk.Button(self, text="Create", command=self.create_sink)
+
+        self._configure_module_list()
+        self._configure_create_label()
+        self._configure_create_entry()
+        self._configure_create_button()
+
+        self._configure_weights()
+
+    def _configure_module_list(self):
+        self.module_list.grid(column=0, row=0, columnspan=3, sticky=tkinter.NSEW)
+        self.module_list.list_box.configure(foreground="white")
+
+    def _configure_create_label(self):
+        self.create_label.grid(column=0, row=1, padx=5, pady=5, sticky=tkinter.E)
+
+    def _configure_create_entry(self):
+        self.create_entry.grid(column=1, row=1, padx=5, pady=5)
+
+    def _configure_create_button(self):
+        self.create_button.grid(column=2, row=1, padx=5, pady=5, sticky=tkinter.W)
+
+    def _configure_weights(self):
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.rowconfigure(0, weight=1)
+
+    def _on_module_list_click(self, evt):
+        pass
+
+    def create_sink(self):
+        sink_name = self.create_entry.get()
+        value = program_logic.create_virtual_sink(sink_name)
+        if value is not 0:
+            self.create_entry.delete(0, tkinter.END)
+            self.create_entry.insert(0, "ERR")
+        else:
+            self.global_refresh_function()
+
+
+    def refresh(self, module_list):
+        specific_module_list = []
+        for module in module_list:
+            if module["name"] == "module-null-sink":
+                specific_module_list.append(module)
+        self.module_list.refresh(specific_module_list)
 
 
 class DeleteModuleTab(ttk.Frame):
