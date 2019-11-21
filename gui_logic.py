@@ -34,6 +34,7 @@ class PaltGui:
         self.tab_controller = ttk.Notebook(self.window)
         self.loopback_tab = LoopbackTab(self.tab_controller, self.global_refresh)
         self.virtual_sink_tab = VirtualSinkTab(self.tab_controller, self.global_refresh)
+        self.remap_source_tab = RemapSourceTab(self.tab_controller, self.global_refresh)
         self.delete_tab = DeleteModuleTab(self.tab_controller, self.global_refresh)
         self.style = ttk.Style()
         setup_style(self.style)
@@ -60,6 +61,7 @@ class PaltGui:
         self.tab_controller.grid(column=0, row=1, sticky=tkinter.NSEW)
         self.tab_controller.add(self.loopback_tab, text=self.loopback_tab.text_name)
         self.tab_controller.add(self.virtual_sink_tab, text=self.virtual_sink_tab.text_name)
+        self.tab_controller.add(self.remap_source_tab, text=self.remap_source_tab.text_name)
         self.tab_controller.add(self.delete_tab, text=self.delete_tab.text_name)
 
     def global_refresh(self):
@@ -70,6 +72,7 @@ class PaltGui:
 
         self.loopback_tab.refresh(source_list, sink_list)
         self.virtual_sink_tab.refresh(module_list)
+        self.remap_source_tab.refresh(source_list)
         self.delete_tab.refresh(module_list)
 
 
@@ -208,13 +211,89 @@ class VirtualSinkTab(ttk.Frame):
         else:
             self.global_refresh_function()
 
-
     def refresh(self, module_list):
         specific_module_list = []
         for module in module_list:
             if module["name"] == "module-null-sink":
                 specific_module_list.append(module)
         self.module_list.refresh(specific_module_list)
+
+
+class RemapSourceTab(ttk.Frame):
+    def __init__(self, parent, global_refresh_function, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.text_name = "Remap Sources"
+        self.global_refresh_function = global_refresh_function
+
+        self.source_list = SourceSinkList(self, "Sources", self._on_module_list_click)
+
+        self.remap_name_label = ttk.Label(self, text="Source Name: ")
+        self.remap_name_entry = ttk.Entry(self, width=20)
+
+        self.source_id_label = ttk.Label(self, text="Source ID: ")
+        self.source_id_entry = ttk.Entry(self, width=6)
+
+        self.create_button = ttk.Button(self, text="Create", command=self.create_remapped_source)
+
+        self._configure_module_list()
+        self._configure_remap_name_label()
+        self._configure_remap_name_entry()
+        self._configure_source_id_label()
+        self._configure_source_id_entry()
+        self._configure_create_button()
+        self._configure_weights()
+
+    def _configure_module_list(self):
+        self.source_list.grid(column=0, row=0, columnspan=3, sticky=tkinter.NSEW)
+
+    def _configure_remap_name_label(self):
+        self.remap_name_label.grid(column=0, row=1, sticky=tkinter.E)
+
+    def _configure_remap_name_entry(self):
+        self.remap_name_entry.grid(column=1, row=1, columnspan=2, sticky=tkinter.W)
+
+    def _configure_source_id_label(self):
+        self.source_id_label.grid(column=0, row=2, padx=5, pady=5, sticky=tkinter.E)
+
+    def _configure_source_id_entry(self):
+        self.source_id_entry.grid(column=1, row=2, padx=5, pady=5)
+
+    def _configure_create_button(self):
+        self.create_button.grid(column=2, row=2, padx=5, pady=5, sticky=tkinter.W)
+
+    def _configure_weights(self):
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.rowconfigure(0, weight=1)
+
+    def _on_module_list_click(self, evt):
+        selection = self.source_list.list_box.curselection()
+        if len(selection) > 0:
+            index = selection[0]
+            self.source_id_entry.delete(0, tkinter.END)
+            self.source_id_entry.insert(0, self.source_list.given_item_list[index]["id"])
+
+    def create_remapped_source(self):
+        # sink_id = self.create_entry.get()
+        # value = program_logic.create_remapped_source(sink_id)
+        # if value is not 0:
+        #     self.create_entry.delete(0, tkinter.END)
+        #     self.create_entry.insert(0, "ERR")
+        # else:
+        #     self.global_refresh_function()
+        remap_name = self.remap_name_entry.get()
+        source_id = self.source_id_entry.get()
+        value = program_logic.create_remapped_source(remap_name, source_id)
+        if value is not 0:
+            self.remap_name_entry.delete(0, tkinter.END)
+            self.remap_name_entry.insert(0, "ERR")
+            self.source_id_entry.delete(0, tkinter.END)
+            self.source_id_entry.insert(0, "ERR")
+        else:
+            self.global_refresh_function()
+
+    def refresh(self, source_list):
+        self.source_list.refresh(source_list)
 
 
 class DeleteModuleTab(ttk.Frame):

@@ -93,6 +93,11 @@ def _short_module_listing_to_dict(raw_listing_string: str) -> dict:
         attributes = listing[2].split(" ")
         nice_name = "{} module-null-sink {}".format(module_id, attributes[0])
         return {"id": module_id, "name": module_type, "nice_name": nice_name, "color": "#323232"}
+    elif module_type == "module-remap-source":
+        logger.debug("Found module-remap-source")
+        attributes = listing[2].split(" ")
+        nice_name = "{} module-remap-source {} {}".format(module_id, attributes[0], attributes[1])
+        return {"id": module_id, "name": module_type, "nice_name": nice_name, "color": "#323232"}
     else:
         return {}
 
@@ -187,8 +192,9 @@ def create_virtual_sink(sink_name: str):
     """
     logger.info("Creating a virtual sink.")
     logger.debug("Creation a virtual sink with name {}".format(sink_name))
-    returned_value = subprocess.call("pactl load-module module-null-sink sink_name={} sink_properties=device.description={} rate=48000".format(
-        sink_name, sink_name), shell=True, stdout=subprocess.PIPE)
+    returned_value = subprocess.call("pactl load-module module-null-sink sink_name={} "
+                                     "sink_properties=device.description={} rate=48000".format(sink_name, sink_name),
+                                     shell=True, stdout=subprocess.PIPE)
     if returned_value is 1:
         logger.warning("Creation of virtual sink with name {} failed!".format(sink_name))
     elif returned_value is 0:
@@ -196,6 +202,25 @@ def create_virtual_sink(sink_name: str):
     else:
         logger.error("Creation of virtual sink with name {} failed with an unexpected error: {}".format(sink_name,
                                                                                                         returned_value))
+    return returned_value
+
+
+def create_remapped_source(remapped_source_name: str, source_id: str):
+    logger.info("Creating a remapped source.")
+    logger.debug("Creating a remapped source with the name of {} from ID of {}".format(remapped_source_name, source_id))
+    returned_value = subprocess.call("pactl load-module module-remap-source master={} source_name={} "
+                                     "source_properties=device.description={}".format(source_id, remapped_source_name,
+                                                                                      remapped_source_name), shell=True,
+                                     stdout=subprocess.PIPE)
+    if returned_value is 1:
+        logger.warning("Creation of remapped source with name {} and ID of {} failed!".format(remapped_source_name,
+                                                                                              source_id))
+    elif returned_value is 0:
+        logger.warning("Creation of remapped source with name {} and ID of {} successful!".format(remapped_source_name,
+                                                                                                  source_id))
+    else:
+        logger.warning("Creation of remapped source with name {} and ID of {} failed with an unexpected error: {}".
+                       format(remapped_source_name, source_id, returned_value))
     return returned_value
 
 
