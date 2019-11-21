@@ -44,22 +44,21 @@ def setup_logging():
 
 
 try:
-    text = 'This is a test program. it demonstrates blah blah blah whatever.'
+    text = 'This program gives a GUI to help users create loopbacks, create virtual sinks, remap sources, and delete ' \
+           'relevent modules.'
     parser = argparse.ArgumentParser(description=text)
-    parser.add_argument("-r", "--rewrite", help="Use rewritten version", action="store_true")
+    parser.add_argument("-o", "--old", help="Use old version", action="store_true")
     args = parser.parse_args()
 
     setup_logging()
     logger = logging.getLogger("Main")
 
-    if args.rewrite:
-        logger.info("Detected rewrite parameter. Rewrite is not finished, using this may break your sound until the"
-                    " next reboot.")
-        gui_logic.run_gui()
-        logger.info("Window appears to have been closed.")
-    else:
+    if args.old:
         logger.info("Starting up deprecated version.")
         Pulseaudio_Loopback_Tool.setup_window()
+        logger.info("Window appears to have been closed.")
+    else:
+        gui_logic.run_gui()
         logger.info("Window appears to have been closed.")
 except KeyboardInterrupt:
     setup_logging()
