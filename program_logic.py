@@ -86,7 +86,11 @@ def _short_module_listing_to_dict(raw_listing_string: str) -> dict:
     if module_type == "module-loopback":
         logger.debug("Found module-loopback")
         attributes = listing[2].split(" ")
-        nice_name = "{} module-loopback {} {}".format(module_id, attributes[1], attributes[0])
+        logger.debug("HAHAHH {}".format(attributes))
+        if len(attributes) > 1:
+            nice_name = "{} module-loopback {} {}".format(module_id, attributes[1], attributes[0])
+        else:
+            nice_name = "{} module-loopback {}".format(module_id, attributes[0])
         return {"id": module_id, "name": module_type, "nice_name": nice_name, "color": "#323232"}
     elif module_type == "module-null-sink":
         logger.debug("Found module-null-sink")
