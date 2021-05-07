@@ -81,6 +81,8 @@ def _short_module_listing_to_dict(raw_listing_string: str) -> dict:
     :return:
     """
     listing = raw_listing_string.split("\t")
+    if len(listing) < 2:
+        return {}
     module_id = listing[0]
     module_type = listing[1]
     if module_type == "module-loopback":
